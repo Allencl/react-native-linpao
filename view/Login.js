@@ -1,6 +1,6 @@
 import React from 'react';
 import { BackHandler,DeviceEventEmitter,window,TouchableOpacity,Text,Image, View, StyleSheet } from 'react-native';
-import { Icon,Button, Provider, InputItem, List, Toast } from '@ant-design/react-native';
+import { Icon,Button,Modal, Provider, InputItem, List, Toast } from '@ant-design/react-native';
 import { createForm, formShape } from 'rc-form';
 
 import WISHttpUtils from '@wis_component/http';   // http 
@@ -15,6 +15,7 @@ class LoginScreenForm extends React.Component {
 
     this.state = {
       toggleEye:true,  // 显示密码
+      modalVisible:true,
 
       userName:"",
       password:"",
@@ -123,7 +124,7 @@ class LoginScreenForm extends React.Component {
 
     const {navigation} = this.props;
     const {getFieldProps, getFieldError, isFieldValidating} = this.props.form;
-    const {userName,password,toggleEye}=this.state;
+    const {modalVisible,userName,password,toggleEye}=this.state;
   
     return (
       <Provider>
@@ -191,6 +192,54 @@ class LoginScreenForm extends React.Component {
               </List.Item>
           </List>
         </View>
+
+        {/* <Modal
+          visible={modalVisible}
+          maskClosable
+        >
+          <View style={styles.warehouseBox}>
+            <Text>222</Text>
+          </View>
+        </Modal> */}
+
+
+        <Modal
+            title="选择仓库"
+            transparent
+            onClose={()=>{
+              this.setState({modalVisible:false})
+            }}
+            
+            visible={this.state.modalVisible}
+            closable
+   
+            >
+            <View style={{ paddingVertical: 20 }}>
+              <Button type="ghost" style={styles.warehouseButton}>
+                <View style={styles.warehouseButtonIcon} >
+                  <Icon name="cloud" color="#ffad33"/>
+                </View>
+                <Text>宁波仓</Text>
+              </Button>
+              <Button type="ghost" style={styles.warehouseButton}>
+                <View style={styles.warehouseButtonIcon} >
+                  <Icon name="cloud" color="#ffad33"/>
+                </View>
+                <Text>上海仓</Text>
+              </Button>
+
+
+              <Button type="ghost" style={styles.warehouseButton}>
+                <View style={styles.warehouseButtonIcon} >
+                  <Icon name="cloud" color="#ffad33"/>
+                </View>
+                <Text>深圳仓</Text>
+              </Button>
+            </View>
+
+          </Modal>
+
+
       </Provider>
     );
   }
@@ -199,9 +248,31 @@ class LoginScreenForm extends React.Component {
 
 
 const styles = StyleSheet.create({
+  warehouseButton:{
+    marginTop:16
+  },
+  warehouseButtonIcon:{
+    width:28,
+    height:22,
+    // marginTop:16,
+    // marginRight:6,
+    // backgroundColor:"red",
+    paddingTop:4,
+    paddingRight:1
+    // position:'absolute',
+    // top:36
+  },
+  warehouseBox:{
+    backgroundColor:'red'
+  },  
+  img:{
+    width:120,
+    height:120
+  },
   imgBox:{
     alignItems:"center",
-    marginTop:50
+    marginTop:50,
+    marginBottom:30
   },
   container:{
     flex: 1,    
