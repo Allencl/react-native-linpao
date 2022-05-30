@@ -1,12 +1,51 @@
 import React from 'react';
-import { BackHandler,DeviceEventEmitter,window,TouchableOpacity,Text,Image, View, StyleSheet } from 'react-native';
+import { BackHandler,DeviceEventEmitter,window,TouchableOpacity,Text,Image,ScrollView, View, StyleSheet } from 'react-native';
 import { Icon,Button,Modal, Provider, InputItem, List, Toast } from '@ant-design/react-native';
 import { createForm, formShape } from 'rc-form';
+import JSEncrypt from 'jsencrypt/bin/jsencrypt.min'
+
 
 import WISHttpUtils from '@wis_component/http';   // http 
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Base64 } from 'js-base64';
+
+// 密钥
+const publicKey = 'MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDDUWQteEr5ZCpOgO0NJ7SM706M\n' +
+  'fUleLNxE/8tYhiEkViZ1TISv1oycR8oxO2PCQEAp8ek+RxpJVxGmhl6PWUIVCvr4\n' +
+  'ZhBBv3B1aRhq1o5ZIvBkosDnFm+jWfX/LJ4R4uXMHXS7/xxPSz8OKOMs2IG9KdOq\n' +
+  '+TLKFsTgqjKDWuOL9QIDAQAB'
+const privateKey = 'MIICdwIBADANBgkqhkiG9w0BAQEFAASCAmEwggJdAgEAAoGBAMNRZC14SvlkKk6A\n' +
+  '7Q0ntIzvTox9SV4s3ET/y1iGISRWJnVMhK/WjJxHyjE7Y8JAQCnx6T5HGklXEaaG\n' +
+  'Xo9ZQhUK+vhmEEG/cHVpGGrWjlki8GSiwOcWb6NZ9f8snhHi5cwddLv/HE9LPw4o\n' +
+  '4yzYgb0p06r5MsoWxOCqMoNa44v1AgMBAAECgYEAsE9NZbo7u4oOopTA52obEkmH\n' +
+  'F0yVKPzHzUU2Mu/JBPr7dlEfSXcbsIshWnWo5JWJFhP4Hy6h7Og6155dx3qkKbOL\n' +
+  'FQ9Shwr6ffJ8obLhmdQHIBCt5j58bth7oBGO/kCRGKAtCCnzfwJn/OuwSLQDgUkd\n' +
+  '/ED9euQt7wXGj4zsGBUCQQDy8qvkGm2WeGTDCw/3DBswGK3yY591E45Gpn8bdddI\n' +
+  'ByTWQpCsW6PlVQhYPe8ugUn1DWU7p9qo5Nbl7HXO2D6TAkEAzc+m0BH42WVaEyDi\n' +
+  'JJa8yLQQk67b2jWIeg+NlJhNk+1dkLowPlVdd8F2GPDuxF4Cfnnsg/XP3OSxh5Ap\n' +
+  'RSWYVwJAEUkw78btmzIvwSztUt+ao55t6fwqoVLl4aMBEjwdODPB7DjKQGk4zR1y\n' +
+  'vYySkxWB5JyyYj88MJ4vqCZd73y1XwJAD9l4+DcaGevTNvvmTnkJSs+LI0RpC/Hp\n' +
+  'c7T060ebWdQCy517D6HVU96jMKKFULwIpyLOkw8AFfvKrCzu8LNHewJBALFSNdle\n' +
+  'XX5yzD1eMbIRTMKZ8PlD8JdFoPjX7sq5JLURjPkoc/Z6kNoLpDrvgW4U0Ipk/xiz\n' +
+  'Yn9C33IPqIqjg5k='
+
+
+
+// 加密
+export function encrypt(txt) {
+  const encryptor = new JSEncrypt()
+  encryptor.setPublicKey(publicKey) // 设置公钥
+  return encryptor.encrypt(txt) // 对数据进行加密
+}
+
+// 解密
+export function decrypt(txt) {
+  const encryptor = new JSEncrypt()
+  encryptor.setPrivateKey(privateKey) // 设置私钥
+  return encryptor.decrypt(txt) // 对数据进行解密
+}  
+
 
 class LoginScreenForm extends React.Component {
 
@@ -15,9 +54,11 @@ class LoginScreenForm extends React.Component {
 
     this.state = {
       toggleEye:true,  // 显示密码
-      modalVisible:true,
+      modalVisible:false,
 
-      userName:"",
+      warehouseMap:[],
+
+      username:"",
       password:"",
     };
   }
@@ -31,7 +72,7 @@ class LoginScreenForm extends React.Component {
         try{
           let loginMessage=JSON.parse(option);
           that.setState({
-            userName:loginMessage["userName"],
+            username:loginMessage["username"],
             password:loginMessage["password"],
           });
         } catch (error) {
@@ -66,6 +107,31 @@ class LoginScreenForm extends React.Component {
 
 
   /**
+   * 获取仓库
+   */
+  getWarehouse= ()=>{
+    let that=this;
+
+    // console.log("成功")
+
+    WISHttpUtils.get("system/user/selectUserStore",{
+
+    },(result)=>{
+      const {code,rows=[]}=result;
+
+      if(code==200){
+        that.setState({
+          modalVisible:true,
+          warehouseMap:rows
+        })
+      }
+
+    })
+
+  }
+
+
+  /**
    * 登录
    * @param
    */
@@ -79,14 +145,14 @@ class LoginScreenForm extends React.Component {
         } else{
           const {navigation} = that.props;
 
-          // let _name = Base64.encode(value["userName"].trim());
+          // let _name = Base64.encode(value["username"].trim());
           // let _password = Base64.encode(value["password"].trim());
 
           // fetch("http://10.6.12.4:8080/"+"phoneMain/phoneLogin.do",{
           //   method: 'POST',
           //   mode: 'cors',
           //   body: JSON.stringify({
-          //     'j_username': value["userName"].trim(),
+          //     'j_username': value["username"].trim(),
           //     'j_password': value["password"].trim()
           //   }),
           // }).then(res => {
@@ -103,16 +169,19 @@ class LoginScreenForm extends React.Component {
 
 
           WISHttpUtils.loginFunc({
-            userName:value["userName"].trim(),
+            username:value["username"].trim(),
             password:value["password"].trim(),
+            // password:encrypt( value["password"].trim() ),
           },()=>{
+
+            that.getWarehouse()
 
             // 登录状态
             AsyncStorage.removeItem("login_type").then(()=>{
               AsyncStorage.setItem("login_type","in");
             });
 
-            navigation.navigate('Home');           
+            // navigation.navigate('Home');           
           })
        
         }
@@ -124,7 +193,7 @@ class LoginScreenForm extends React.Component {
 
     const {navigation} = this.props;
     const {getFieldProps, getFieldError, isFieldValidating} = this.props.form;
-    const {modalVisible,userName,password,toggleEye}=this.state;
+    const {modalVisible,username,password,toggleEye}=this.state;
   
     return (
       <Provider>
@@ -149,11 +218,11 @@ class LoginScreenForm extends React.Component {
 
               <View style={{paddingRight:18}}>
                 <InputItem
-                  {...getFieldProps('userName',{
+                  {...getFieldProps('username',{
                     rules:[{required:true}],
-                    initialValue:userName
+                    initialValue:username
                   })}
-                  error={getFieldError('userName')}
+                  error={getFieldError('username')}
                   placeholder=""
                 >
                   用户名
@@ -214,28 +283,25 @@ class LoginScreenForm extends React.Component {
             closable
    
             >
-            <View style={{ paddingVertical: 20 }}>
-              <Button type="ghost" style={styles.warehouseButton}>
-                <View style={styles.warehouseButtonIcon} >
-                  <Icon name="cloud" color="#ffad33"/>
-                </View>
-                <Text>宁波仓</Text>
-              </Button>
-              <Button type="ghost" style={styles.warehouseButton}>
-                <View style={styles.warehouseButtonIcon} >
-                  <Icon name="cloud" color="#ffad33"/>
-                </View>
-                <Text>上海仓</Text>
-              </Button>
+            <ScrollView style={{height:300, paddingVertical: 20 }}>
 
+              { this.state.warehouseMap.map((o,i)=>{
+                  return (<Button key={String(i)} type="ghost" style={styles.warehouseButton}>
+                    <View style={styles.warehouseButtonBox}>
+                      <View style={styles.warehouseButtonIcon} >
+                        <Icon name="cloud" color="#ffad33"/>
+                      </View>
+                      <View >
+                        <Text numberOfLines={1} style={styles.warehouseButtonText}>{o.storageName}</Text>
+                      </View>
+                    </View>
 
-              <Button type="ghost" style={styles.warehouseButton}>
-                <View style={styles.warehouseButtonIcon} >
-                  <Icon name="cloud" color="#ffad33"/>
-                </View>
-                <Text>深圳仓</Text>
-              </Button>
-            </View>
+                  </Button>)
+                })
+
+              }
+
+            </ScrollView>
 
           </Modal>
 
@@ -251,16 +317,29 @@ const styles = StyleSheet.create({
   warehouseButton:{
     marginTop:16
   },
+  warehouseButtonBox:{
+    width:120,
+    flexDirection:"row",
+    textAlign:'left',
+    // backgroundColor:'red'
+  },
   warehouseButtonIcon:{
-    width:28,
-    height:22,
-    // marginTop:16,
-    // marginRight:6,
-    // backgroundColor:"red",
-    paddingTop:4,
-    paddingRight:1
+    // flex:1,
+    // backgroundColor:'red',
+    // width:28,
+    // height:22,
+    // // marginTop:16,
+    // // marginRight:6,
+    // // backgroundColor:"red",
+    // paddingTop:4,
+    // paddingRight:1
     // position:'absolute',
     // top:36
+  },
+  warehouseButtonText:{
+    
+    paddingLeft:8,
+    fontSize:16
   },
   warehouseBox:{
     backgroundColor:'red'

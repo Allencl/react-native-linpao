@@ -6,6 +6,7 @@ import {DeviceEventEmitter} from 'react-native';
 import { Toast } from '@ant-design/react-native';
 import { Base64 } from 'js-base64';
 
+import {encrypt} from '../../view/Login.js'
 
 /**
  * 网络请求的工具类
@@ -87,17 +88,26 @@ export default class WISHttpUtils extends Component{
             DeviceEventEmitter.emit('globalEmitter_toggle_loding',true);            
         }
 
-
         // fetch(origin+"api-uaa/oauth/user/token",{
-        fetch(origin+"phoneMain/phoneLogin.do",{
+        fetch(origin+"auth/login",{
             method:'POST',
             headers:{
+                'Content-Type': 'application/json',
                 // 'Content-Type': 'application/json;charset=UTF-8',
-                'Content-Type': 'application/x-www-form-urlencoded',
+                // 'Content-Type': 'application/x-www-form-urlencoded',
                 // 'Authorization': 'Basic d2ViQXBwOndlYkFwcA=='
             },
-            body: "j_username="+option.userName+"&j_password="+option.password
-            // body: "j_username="+option.userName+"&j_password="+option.password+"&lang=zh_CN&j_captcha=NO&customKey='toName=home'"
+            body:JSON.stringify({
+                username:option.username,
+                // password:option.password
+                password:encrypt( option.password )
+            })
+            // body:JSON.stringify({
+            //     username:"ccxu",
+            //     password:"PEHOrE7Z7mc57rgsNzDam359XAz3p/gSisXnafdBvgIqIBw7ozD+/xYJpCWxpzOYnQ6DDKPRXT0EmV+5FFNxLRfK9Ao3aG3rh8pG3VX1FkDKleyT1D2ZOdpAITOBxi1lShGCVp+CrbzbXj6TenTilBIM83aXqvehHSvJWV+/5Mw="
+            // })
+            // body: "j_username="+option.username+"&j_password="+option.password
+            // body: "j_username="+option.username+"&j_password="+option.password+"&lang=zh_CN&j_captcha=NO&customKey='toName=home'"
         })
         .then((response) => {
             // console.log(response);
@@ -126,12 +136,18 @@ export default class WISHttpUtils extends Component{
             // 关闭 loding
             DeviceEventEmitter.emit('globalEmitter_toggle_loding',false);
 
-            // console.log(json)
-            var token=json.data.token;
+            // console.log(typeof json)
+            console.log(json)
+            // console.log(json.msg)
+            // console.log(json.code)
+
+
+            // var token=json.data.access_token;
 
             // 提示
-            if(json && json["message"]){
-                Toast.info(json["message"],1);
+            if(json && json.msg){
+                console.log(23322)
+                Toast.info(json.msg,1);
             }
       
 
@@ -142,9 +158,9 @@ export default class WISHttpUtils extends Component{
                 try{
                     // 缓存 登录信息
                     AsyncStorage.setItem("login_message",JSON.stringify({
-                        // userName: Base64.decode(option.userName),
+                        // username: Base64.decode(option.username),
                         // password:Base64.decode(option.password),
-                        userName: option.userName,
+                        username: option.username,
                         password:option.password,
                     }));
 
@@ -156,10 +172,17 @@ export default class WISHttpUtils extends Component{
                         {buffer_new_expires_in: new Date().getTime()+(500000) }                
                     )));                  
 
+
                     // 登录成功
-                    if(json.success){
-                        callback();
+                    if(json.code==200){
+                        AsyncStorage.setItem("_token",json.data.access_token).then(()=>{
+                            callback();
+                        });
                     }
+
+                    // if(json.success){
+                    //     callback();
+                    // }
                     // 缓存 token
                     // AsyncStorage.setItem("_token",token).then(()=>{
                     //     callback();
@@ -174,23 +197,13 @@ export default class WISHttpUtils extends Component{
             }
         })   
         .catch(error => {
-            Toast.offline('服务器响应失败！',1);
+            // console.log(error.message)
+            // console.log(123221)
+            // Toast.offline('服务器响应失败！',1);
             // 关闭 loding
             DeviceEventEmitter.emit('globalEmitter_toggle_loding',false);
         });      
     }
-
-
-    /**
-     * 普通的get请求 
-     * @param {*} url 地址
-     * @param {*} params  参数
-     * @param {*} callback  成功后的回调
-     */
-    static get(url,params,callback){        
-
-    };
-
 
     /**
      * token 失效
@@ -232,9 +245,9 @@ export default class WISHttpUtils extends Component{
                         let loginMessage=JSON.parse(option);
 
                         that.loginFunc({
-                            // userName: Base64.encode(loginMessage["userName"]),
+                            // username: Base64.encode(loginMessage["username"]),
                             // password: Base64.encode(loginMessage["password"]),
-                            userName: loginMessage["userName"],
+                            username: loginMessage["username"],
                             password: loginMessage["password"],
                             hideLoading:true
                         },()=>{
@@ -330,4 +343,116 @@ export default class WISHttpUtils extends Component{
 
         }
     }
+
+
+    /**
+     * 普通的get请求 
+     * @param {*} url 地址
+     * @param {*} params  参数
+     * @param {*} callback  成功后的回调
+     */
+    static async get(url,option,callback){        
+        var that=this;
+        var okToken= await this.disabledToken();
+
+        // token 失效|有效
+        if(okToken){
+
+
+            // 缓存的 登录信息
+            AsyncStorage.getItem("login_message").then((option)=>{
+                if(option){
+                    try{
+                        let loginMessage=JSON.parse(option);
+
+                        that.loginFunc({
+                            // username: Base64.encode(loginMessage["username"]),
+                            // password: Base64.encode(loginMessage["password"]),
+                            username: loginMessage["username"],
+                            password: loginMessage["password"],
+                            hideLoading:true
+                        },()=>{
+                            that.getAjax(url,option,callback);
+                        });
+                    } catch (error) {
+            
+                    }          
+                }
+            });
+
+        }else{
+
+            this.getAjax(url,option,callback);
+        }
+    };
+
+
+    /**
+     * get Ajax
+    */
+     static async getAjax(url,option={},callback){
+
+        try {
+
+            
+            AsyncStorage.getItem("_token").then((data)=>{
+            
+                // 关闭 loading
+                if(!option["hideLoading"]){
+                    // open loding
+                    DeviceEventEmitter.emit('globalEmitter_toggle_loding',true);
+                }
+
+
+
+                fetch(origin+url,{
+                    method:'GET',
+                    headers: {
+                        // 'Content-Type': 'application/x-www-form-urlencoded',
+                        'Authorization': 'Bearer '+data
+                    },
+                })
+                .then((response) => {
+
+                    console.log("post 返回数据");
+                    console.log(response); 
+
+
+                    // 关闭 loding
+                    DeviceEventEmitter.emit('globalEmitter_toggle_loding',false);
+
+                    // 如果相应码为200 将字符串转换为json对象
+                    if(response.ok){
+                        return response.json();
+                    }else{
+                        (!option["hideToast"]) && Toast.offline(`服务器报错！[${response.status}]`,1);
+                        // Toast.offline(response.message);
+                    }                  
+                })
+                .then((json) => {
+
+                    // 关闭 loding
+                    DeviceEventEmitter.emit('globalEmitter_toggle_loding',false);
+
+                    // 提示
+                    if(json && json["message"]){
+                        Toast.info(json["message"],1);
+                    }
+
+                    // 返回数据
+                    if(json){
+                        callback(json);
+                    }
+                })
+                .catch(error => {
+                    Toast.offline('服务器响应失败！',1);
+                    // 关闭 loding
+                    DeviceEventEmitter.emit('globalEmitter_toggle_loding',false);
+                });                
+            });
+        } catch (error) {
+
+        }
+    }
+
 }
