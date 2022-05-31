@@ -91,8 +91,10 @@ export default class WISHttpUtils extends Component{
         // fetch(origin+"api-uaa/oauth/user/token",{
         fetch(origin+"auth/login",{
             method:'POST',
+            mode:"cors",
             headers:{
                 'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
                 // 'Access-Control-Allow-Origin': '*'
                 // 'Content-Type': 'application/json;charset=UTF-8',
                 // 'Content-Type': 'application/x-www-form-urlencoded',
@@ -111,8 +113,8 @@ export default class WISHttpUtils extends Component{
             // body: "j_username="+option.username+"&j_password="+option.password+"&lang=zh_CN&j_captcha=NO&customKey='toName=home'"
         })
         .then((response) => {
-            console.log("123377888")
-            console.log(response);
+            // console.log("123377888")
+            // console.log(response);
  
             // 关闭 loding
             DeviceEventEmitter.emit('globalEmitter_toggle_loding',false);
@@ -134,7 +136,7 @@ export default class WISHttpUtils extends Component{
             }
         })
         .then((json) => {
-            console.log(json)
+            // console.log(json)
 
 
             // 关闭 loding
@@ -298,8 +300,10 @@ export default class WISHttpUtils extends Component{
 
                 fetch(origin+url,{
                     method:'POST',
-                    headers: option["headers"]?Object.assign({'Authorization': 'Bearer '+data},option["headers"]):{
+                    mode:"cors",
+                    headers: {
                         'Content-Type': 'application/x-www-form-urlencoded',
+                        'Access-Control-Allow-Origin': '*',
                         'Authorization': 'Bearer '+data
                     },
                     // body: formData
@@ -418,9 +422,11 @@ export default class WISHttpUtils extends Component{
 
                 fetch(`${origin}${url}${_parmasURL}`,{
                     method:'GET',
+                    mode:"cors",
                     headers: {
                         // 'Content-Type': 'application/x-www-form-urlencoded',
                         "Connection": "keep-alive",
+                        'Access-Control-Allow-Origin': '*',
                         'Authorization': 'Bearer '+data
                     },
                 })
@@ -465,7 +471,7 @@ export default class WISHttpUtils extends Component{
                     }
                 })
                 .catch(error => {
-                    Toast.offline('服务器响应失败！',1);
+                    // Toast.offline('服务器响应失败！',1);
                     // 关闭 loding
                     DeviceEventEmitter.emit('globalEmitter_toggle_loding',false);
                 });                

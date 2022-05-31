@@ -109,7 +109,7 @@ class LoginScreenForm extends React.Component {
   /**
    * 获取仓库
    */
-  getWarehouse= ()=>{
+  getWarehouse(){
     let that=this;
 
 
@@ -121,17 +121,22 @@ class LoginScreenForm extends React.Component {
       }
     },(result)=>{
 
-      console.log(result.code)
+      console.log(result)
       const {code,rows=[]}=result;
 
       if(code==200){
-        console.log(3443)
+        // console.log(3443)
+        // console.log(that)
 
         that.setState({
-          modalVisible:true,
-          warehouseMap:rows
+          modalVisible:false,
+          warehouseMap:[]
+        },()=>{
+          that.setState({
+            modalVisible:true,
+            warehouseMap:rows
+          })
         })
-
       }
 
     })
@@ -162,7 +167,9 @@ class LoginScreenForm extends React.Component {
   /**
    * 获取 菜单
    */
-  getMenu=()=>{
+  getMenu(){
+    let that=this;
+
     WISHttpUtils.get(`system/menu/getRouters/A/2527`,{
       params:{
 
@@ -172,18 +179,29 @@ class LoginScreenForm extends React.Component {
       console.log(result)
       console.log(data.length)
 
+      
+      that.setState({
+        modalVisible:false,
+        warehouseMap:[]
+      },()=>{
+        // navigation.navigate('Home');   
+      })
+
+
+      // AsyncStorage.setItem("menu_buffer_list",JSON.stringify((data[0]||{})));
+
+      // // 登录状态
+      // AsyncStorage.removeItem("login_type").then(()=>{
+      //   AsyncStorage.setItem("login_type","in");
+      // });
+
+      // navigation.navigate('Home');   
+
       // const {code,rows=[]}=result;
-      if(data.length){
-        AsyncStorage.setItem("menu_buffer_list",JSON.stringify((data[0]||[])));
+      // if(data.length){
 
-        // 登录状态
-        AsyncStorage.removeItem("login_type").then(()=>{
-          AsyncStorage.setItem("login_type","in");
-        });
 
-        navigation.navigate('Home');   
-
-      }
+      // }
 
     })
   }
@@ -326,31 +344,31 @@ class LoginScreenForm extends React.Component {
 
         <Modal
             title={`选择仓库 (${this.state.warehouseMap.length})`}
-            transparent
             onClose={()=>{
               this.setState({modalVisible:false})
             }}
-            visible={modalVisible}
+            visible={that.state.modalVisible}
             closable
+            transparent
    
             >
-            <ScrollView style={{height:300, paddingVertical: 20 }}>
-
-              { this.state.warehouseMap.map((o,i)=>{
-                  return (<Button onPress={()=> this.selectWarehouse(o) } key={String(i)} type="ghost" style={styles.warehouseButton}>
-                    <View style={styles.warehouseButtonBox}>
-                      <View style={styles.warehouseButtonIcon} >
-                        <Icon name="cloud" color="#ffad33"/>
+            <ScrollView style={{height:300,}}>
+              <View style={{paddingVertical: 20 }}>
+                { this.state.warehouseMap.map((o,i)=>{
+                    return (<Button onPress={()=> this.selectWarehouse(o) } key={String(i)} type="ghost" style={styles.warehouseButton}>
+                      <View style={styles.warehouseButtonBox}>
+                        <View style={styles.warehouseButtonIcon} >
+                          <Icon name="cloud" color="#ffad33"/>
+                        </View>
+                        <View >
+                          <Text numberOfLines={1} style={styles.warehouseButtonText}>{o.storageName}</Text>
+                        </View>
                       </View>
-                      <View >
-                        <Text numberOfLines={1} style={styles.warehouseButtonText}>{o.storageName}</Text>
-                      </View>
-                    </View>
 
-                  </Button>)
-                })
-
-              }
+                    </Button>)
+                  })         
+                }
+              </View>
 
             </ScrollView>
 

@@ -36,6 +36,9 @@ class HomeScreen extends Component{
         var {navigation} = this.props;
 
 
+        // 获取 菜单 
+        that.getMenu()
+
         // 未登录   
         AsyncStorage.getItem("login_type").then((option)=>{
             // Toast.offline(option,1);
@@ -64,7 +67,16 @@ class HomeScreen extends Component{
 
 
 
- 
+    /**
+     * 获取菜单
+     */
+    getMenu(){
+        AsyncStorage.getItem("menu_buffer_list").then((option)=>{
+            let _menuJson=JSON.parse(option)
+
+            console.log(_menuJson)
+        })
+    }
 
     /**
      * 
