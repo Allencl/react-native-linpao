@@ -112,24 +112,81 @@ class LoginScreenForm extends React.Component {
   getWarehouse= ()=>{
     let that=this;
 
+
     // console.log("成功")
 
     WISHttpUtils.get("system/user/selectUserStore",{
+      params:{
 
+      }
     },(result)=>{
+
+      console.log(result.code)
       const {code,rows=[]}=result;
 
       if(code==200){
+        console.log(3443)
+
         that.setState({
           modalVisible:true,
           warehouseMap:rows
         })
+
       }
 
     })
 
   }
 
+
+  /**
+   * 选择 仓库
+   */
+  selectWarehouse=(data)=>{
+    const that=this;
+    const {tmBasStorageId}=data;
+
+    WISHttpUtils.get(`system/user/selectStorage/${tmBasStorageId}`,{
+      params:{
+
+      }
+    },(result)=>{
+      that.getMenu()
+      console.log(result)
+      // const {code,rows=[]}=result;
+    })
+
+  }
+
+
+  /**
+   * 获取 菜单
+   */
+  getMenu=()=>{
+    WISHttpUtils.get(`system/menu/getRouters/A/2527`,{
+      params:{
+
+      }
+    },(result)=>{
+      const {data=[]}=result;
+      console.log(result)
+      console.log(data.length)
+
+      // const {code,rows=[]}=result;
+      if(data.length){
+        AsyncStorage.setItem("menu_buffer_list",JSON.stringify((data[0]||[])));
+
+        // 登录状态
+        AsyncStorage.removeItem("login_type").then(()=>{
+          AsyncStorage.setItem("login_type","in");
+        });
+
+        navigation.navigate('Home');   
+
+      }
+
+    })
+  }
 
   /**
    * 登录
@@ -176,12 +233,7 @@ class LoginScreenForm extends React.Component {
 
             that.getWarehouse()
 
-            // 登录状态
-            AsyncStorage.removeItem("login_type").then(()=>{
-              AsyncStorage.setItem("login_type","in");
-            });
-
-            // navigation.navigate('Home');           
+        
           })
        
         }
@@ -190,7 +242,7 @@ class LoginScreenForm extends React.Component {
 
 
   render() {
-
+    const that=this;
     const {navigation} = this.props;
     const {getFieldProps, getFieldError, isFieldValidating} = this.props.form;
     const {modalVisible,username,password,toggleEye}=this.state;
@@ -273,20 +325,19 @@ class LoginScreenForm extends React.Component {
 
 
         <Modal
-            title="选择仓库"
+            title={`选择仓库 (${this.state.warehouseMap.length})`}
             transparent
             onClose={()=>{
               this.setState({modalVisible:false})
             }}
-            
-            visible={this.state.modalVisible}
+            visible={modalVisible}
             closable
    
             >
             <ScrollView style={{height:300, paddingVertical: 20 }}>
 
               { this.state.warehouseMap.map((o,i)=>{
-                  return (<Button key={String(i)} type="ghost" style={styles.warehouseButton}>
+                  return (<Button onPress={()=> this.selectWarehouse(o) } key={String(i)} type="ghost" style={styles.warehouseButton}>
                     <View style={styles.warehouseButtonBox}>
                       <View style={styles.warehouseButtonIcon} >
                         <Icon name="cloud" color="#ffad33"/>

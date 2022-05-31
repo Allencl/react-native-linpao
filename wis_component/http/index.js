@@ -93,6 +93,7 @@ export default class WISHttpUtils extends Component{
             method:'POST',
             headers:{
                 'Content-Type': 'application/json',
+                // 'Access-Control-Allow-Origin': '*'
                 // 'Content-Type': 'application/json;charset=UTF-8',
                 // 'Content-Type': 'application/x-www-form-urlencoded',
                 // 'Authorization': 'Basic d2ViQXBwOndlYkFwcA=='
@@ -110,7 +111,8 @@ export default class WISHttpUtils extends Component{
             // body: "j_username="+option.username+"&j_password="+option.password+"&lang=zh_CN&j_captcha=NO&customKey='toName=home'"
         })
         .then((response) => {
-            // console.log(response);
+            console.log("123377888")
+            console.log(response);
  
             // 关闭 loding
             DeviceEventEmitter.emit('globalEmitter_toggle_loding',false);
@@ -132,12 +134,13 @@ export default class WISHttpUtils extends Component{
             }
         })
         .then((json) => {
+            console.log(json)
+
 
             // 关闭 loding
             DeviceEventEmitter.emit('globalEmitter_toggle_loding',false);
 
             // console.log(typeof json)
-            console.log(json)
             // console.log(json.msg)
             // console.log(json.code)
 
@@ -146,7 +149,7 @@ export default class WISHttpUtils extends Component{
 
             // 提示
             if(json && json.msg){
-                console.log(23322)
+                // console.log(23322)
                 Toast.info(json.msg,1);
             }
       
@@ -197,9 +200,10 @@ export default class WISHttpUtils extends Component{
             }
         })   
         .catch(error => {
-            // console.log(error.message)
+            console.log( error )
+            console.log( error.message )
             // console.log(123221)
-            // Toast.offline('服务器响应失败！',1);
+            Toast.offline('服务器响应失败！',1);
             // 关闭 loding
             DeviceEventEmitter.emit('globalEmitter_toggle_loding',false);
         });      
@@ -394,6 +398,15 @@ export default class WISHttpUtils extends Component{
 
         try {
 
+            const _bufferParmasURL=Object.entries((option["params"]||{}));
+            let _parmasURL="";  
+
+            // 格式化 url
+            if(_bufferParmasURL.length){
+                _bufferParmasURL.map(o=>{ _parmasURL+=`${o[0]}=${o[1]}&` });
+                _parmasURL=`?${_parmasURL.slice(0,_parmasURL.length-1)}`
+            }
+  
             
             AsyncStorage.getItem("_token").then((data)=>{
             
@@ -403,19 +416,18 @@ export default class WISHttpUtils extends Component{
                     DeviceEventEmitter.emit('globalEmitter_toggle_loding',true);
                 }
 
-
-
-                fetch(origin+url,{
+                fetch(`${origin}${url}${_parmasURL}`,{
                     method:'GET',
                     headers: {
                         // 'Content-Type': 'application/x-www-form-urlencoded',
+                        "Connection": "keep-alive",
                         'Authorization': 'Bearer '+data
                     },
                 })
                 .then((response) => {
 
-                    console.log("post 返回数据");
-                    console.log(response); 
+                    // console.log("post 返回数据");
+                    // console.log(response); 
 
 
                     // 关闭 loding
@@ -429,15 +441,23 @@ export default class WISHttpUtils extends Component{
                         // Toast.offline(response.message);
                     }                  
                 })
-                .then((json) => {
+                .then((response) => {
+                    let json=JSON.parse( JSON.stringify(response) )
+
+                    // console.log(json)
 
                     // 关闭 loding
                     DeviceEventEmitter.emit('globalEmitter_toggle_loding',false);
 
                     // 提示
-                    if(json && json["message"]){
-                        Toast.info(json["message"],1);
+                    if(json["code"]==500){
+                        Toast.info("服务器报错！",1);
                     }
+
+                    // 提示
+                    // if(json["code"]!=200 && json["msg"]){
+                    //     Toast.info(json["msg"],1);
+                    // }
 
                     // 返回数据
                     if(json){
